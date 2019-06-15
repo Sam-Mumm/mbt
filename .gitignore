@@ -1,0 +1,10 @@
+.idea/
+.mbt/
+__pycache__/
+bin/
+lib/
+lib64
+mbt.py.bak
+modules/
+pyvenv.cfg
+share/
