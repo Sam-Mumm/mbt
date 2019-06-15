@@ -4,6 +4,7 @@ Usage:
 mbt.py init [--path=<path>]
 mbt.py new --summary=<summary> [--description=<description>] [--path=<path>]
 mbt.py show --id=<issue-id> [--path=<path>]
+mbt.py edit --id=<issue-id> --key=<field>  --value=<value> [--path=<path>]
 mbt.py list [--path=<path>]
 mbt.py close --id=<issue-id> --solution=<solution> [--path=<path>]
 mbt.py -h|--help
@@ -29,13 +30,22 @@ def main():
         path = os.getcwd()
 
     if arguments['init'] == True:
-        issue_handler.initialize_bugtracker(path)
+        rv = issue_handler.initialize_bugtracker(path)
+
+        print(rv['msg'])
 
     elif arguments['new'] == True:
-        issue_handler.new_issue(arguments['--summary'], arguments['--description'], path)
+        rv = issue_handler.new_issue(arguments['--summary'], arguments['--description'], path)
+
+        print(rv['msg'])
 
     elif arguments['show'] == True:
-        issue_handler.show_issue(arguments['--id'], path)
+        rv = issue_handler.show_issue(arguments['--id'], path)
+
+        print(rv['msg'])
+
+    elif arguments['edit'] == True:
+        print(issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path))
 
     elif arguments['list'] == True:
         issue_handler.list_issue(path)
@@ -43,6 +53,9 @@ def main():
     elif arguments['status'] == True:
         issue_handler.close_issue()
 
+    return rv['rc']
 
 if __name__ == '__main__':
-    main()
+    rc = main()
+
+    exit(rc)

@@ -19,9 +19,11 @@ def initialize_bugtracker(path):
         try:
             os.mkdir(os.path.join(path, ".mbt"))
         except OSError as e:
-            print(str(e)+"Verzeichnis .mbt konnte nicht erstellt werden")
+            return {'rc': 1, 'msg': str(e)+"Verzeichnis .mbt konnte nicht erstellt werden" }
+
+        return {'rc': 0, 'msg': "MBT wurde erfolgreich initialisiert" }
     else:
-        print("Initialisierung fehlgeschlagen: Verzeichnis .mbt existiert bereits")
+        return { 'rc': 1, 'msg': "Initialisierung fehlgeschlagen: Verzeichnis .mbt existiert bereits" }
 
 def new_issue(summary, description, path):
     full_path=os.path.join(path, ".mbt")
@@ -39,18 +41,18 @@ def new_issue(summary, description, path):
         with open(os.path.join(full_path, new_id), 'w') as fh:
             json.dump(issue_structure, fh)
 
-        print("Es wurde ein neues Ticket mit der ID: \""+new_id+"\" erstellt")
+        return { 'rc': 0, 'msg': "Es wurde ein neues Ticket mit der ID: \""+new_id+"\" erstellt" }
     else:
-        print("Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar")
+        return { 'rc': 1, 'msg': "Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar" }
 
 def show_issue(id, path):
-    fields=[['id', 'ID:'],
-            ['status', 'Status:'],
-            ['summary','Titel:'],
-            ['description', 'Beschreibung:'],
-            ['priority','Prioritaet:'],
-            ['created_by', 'Erstellt von:'],
-            ['created_at', 'Erstellt am:']]
+    fields=[['id', 'ID'],
+            ['status', 'Status'],
+            ['summary','Titel'],
+            ['description', 'Beschreibung'],
+            ['priority','Prioritaet'],
+            ['created_by', 'Erstellt von'],
+            ['created_at', 'Erstellt am']]
 
     issue_details = []
     full_path = os.path.join(path, ".mbt")
@@ -61,16 +63,20 @@ def show_issue(id, path):
 
             for i in fields:
                 if i[0] in issue:
+                    field_name = i[1]+" ("+i[0]+"): "
                     if issue[i[0]] != None:
-                        issue_details.extend([[i[1], issue[i[0]]]])
+                        issue_details.extend([[field_name, issue[i[0]]]])
                     else:
-                        issue_details.extend([[i[1], "---"]])
+                        issue_details.extend([[field_name, "---"]])
 
-            print(tabulate(issue_details))
+            return { 'rc': 0, 'msg': tabulate(issue_details) }
         else:
-            print("Der Vorgang existiert nicht oder ist nicht lesbar")
+            return { 'rc': 1, 'msg': "Der Vorgang existiert nicht oder ist nicht lesbar" }
     else:
-        print("Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar")
+        return { 'rc': 1, 'msg': "Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar" }
+
+def edit_issue(id, key, value, path):
+    modifiable = []
 
 
 def list_issue(path):
