@@ -119,8 +119,8 @@ def show_issue(id, path):
             try:
                 with open(os.path.join(full_path, id)) as fh:
                     issue = json.load(fh)
-            except:
-                return {'rc': 1, 'msg': "Vorgang "+id+" konnte nicht gelesen werden"}
+            except OSError as e:
+                return {'rc': 1, 'msg': str(e)+" Vorgang "+id+" konnte nicht gelesen werden"}
 
             for i in fields:
                 if i[0] in issue:
@@ -144,28 +144,36 @@ def show_issue(id, path):
 # value         neuer Wert fuer das Feld
 # path          Daten-Oberverzeichnis
 def edit_issue(id, key, value, path):
+    # Liste der bearbeitbarer Felder
     modifiable = ['summary', 'description', 'priority' ]
     full_path = os.path.join(path, ".mbt")
 
-    if key == 'priority' and value != 'high' and value != 'medium' and value != 'low':
+    # Falls die Prioritaet geaendert werden soll, liegt der neue Wert im gueltigen Bereich?
+    if key == 'priority' and value not in configuration['priority']:
         return { 'rc': 1, 'msg': "Fuer priority sind nur die Werte hight, medium, low gueltig" }
 
+    # Ist das uebergebene Feld bearbeitbar?
     if key in modifiable:
+
+        # Existiert das Daten-Verzeichnis und ist es schreibbar?
         if os.path.isdir(full_path) and os.access(path, os.W_OK):
+
+            # Existiert der Vorgang (Vorgangs-ID == Dateiname) und ist er sowohl les- als auch schreibbar?
             if os.path.isfile(os.path.join(full_path, id)) and os.access(os.path.join(full_path, id), os.W_OK) and os.access(os.path.join(full_path, id), os.R_OK):
+
                 try:
                     with open(os.path.join(full_path, id)) as fh:
                         issue = json.load(fh)
-                except:
+                except OSError as e:
                     return {'rc': 1, 'msg': "Vorgang " + id + " konnte nicht gelesen werden"}
 
                 issue[key]=value
 
                 try:
-                    with open(os.path.join(full_path, new_id), 'w') as fh:
-                        json.dump(issue_structure, fh)
-                except:
-                    return {'rc': 1, 'msg': "Vorgang " + id + " konnte nicht gelesen werden"}
+                    with open(os.path.join(full_path, id), 'w') as fh:
+                        json.dump(issue, fh)
+                except OSError as e:
+                    return {'rc': 1, 'msg': "Vorgang " + id + " konnte nicht geschrieben werden"}
 
                 return {'rc': 0, 'msg': "Vorgang "+id+" wurde erfolgreich aktualisiert"}
             else:
@@ -183,7 +191,7 @@ def list_issue(path):
     full_path = os.path.join(path, ".mbt")
     issues_list = []
 
-
+    # Existiert das Daten-Verzeichnis und ist es lesbar?
     if os.path.isdir(full_path) and os.access(path, os.R_OK):
         for f in os.listdir(full_path):
             try:
@@ -239,7 +247,6 @@ def status_issue(id, status, path):
                         return {'rc': 1, 'msg': "Der Vorgang konnte nicht aktualisiert werden"}
 
                     return {'rc': 0, 'msg': "Vorgang wurde erfolgreich aktualisiert"}
-
                 else:
                     return {'rc': 1, 'msg': "Ungueltiger Zielzustand, erlaubt sind nur: "+', '.join(configuration['workflow'][issue['status']])}
             else:
@@ -256,3 +263,5 @@ def status_issue(id, status, path):
 # n             Laenge des Strings der erzeugt werden soll
 def generateID(n):
     return ''.join([random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase ) for i in range(n)])
+
+
