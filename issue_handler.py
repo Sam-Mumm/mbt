@@ -84,8 +84,11 @@ def show_issue(id, path):
     full_path = os.path.join(path, ".mbt")
     if os.path.isdir(full_path) and os.access(path, os.W_OK):
         if os.path.isfile(os.path.join(full_path, id)) and os.access(os.path.join(full_path, id), os.R_OK):
-            with open(os.path.join(full_path, id)) as fh:
-                issue = json.load(fh)
+            try:
+                with open(os.path.join(full_path, id)) as fh:
+                    issue = json.load(fh)
+            except:
+                return {'rc': 1, 'msg': "Vorgang "+id+" konnte nicht gelesen werden"}
 
             for i in fields:
                 if i[0] in issue:
@@ -111,13 +114,19 @@ def edit_issue(id, key, value, path):
     if key in modifiable:
         if os.path.isdir(full_path) and os.access(path, os.W_OK):
             if os.path.isfile(os.path.join(full_path, id)) and os.access(os.path.join(full_path, id), os.W_OK) and os.access(os.path.join(full_path, id), os.R_OK):
-                with open(os.path.join(full_path, id)) as fh:
-                    issue = json.load(fh)
+                try:
+                    with open(os.path.join(full_path, id)) as fh:
+                        issue = json.load(fh)
+                except:
+                    return {'rc': 1, 'msg': "Vorgang " + id + " konnte nicht gelesen werden"}
 
                 issue[key]=value
 
-                with open(os.path.join(full_path, new_id), 'w') as fh:
-                    json.dump(issue_structure, fh)
+                try:
+                    with open(os.path.join(full_path, new_id), 'w') as fh:
+                        json.dump(issue_structure, fh)
+                except:
+                    return {'rc': 1, 'msg': "Vorgang " + id + " konnte nicht gelesen werden"}
 
                 return {'rc': 0, 'msg': "Vorgang "+id+" wurde erfolgreich aktualisiert"}
             else:
@@ -166,8 +175,11 @@ def status_issue(id, status, path):
                 if status in configuration['workflow'][issue['status']]:
                     issue['status']=status
 
-                    with open(os.path.join(full_path, id), 'w') as fh:
-                        json.dump(issue, fh)
+                    try:
+                        with open(os.path.join(full_path, id), 'w') as fh:
+                            json.dump(issue, fh)
+                    except:
+                        return {'rc': 1, 'msg': "Der Vorgang konnte nicht aktualisiert werden"}
 
                     return {'rc': 0, 'msg': "Vorgang wurde erfolgreich aktualisiert"}
 
