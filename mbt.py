@@ -29,35 +29,33 @@ def main():
     else:
         path = os.getcwd()
 
+    # Fallunterscheidung fuer...
+    # ...die initialiseren vom Bugtracker
     if arguments['init'] == True:
         rv = issue_handler.initialize_bugtracker(path)
 
-        print(rv['msg'])
-
+    # ...die Erstellung von einem neuen Vorgang
     elif arguments['new'] == True:
         rv = issue_handler.new_issue(arguments['--summary'], arguments['--description'], arguments['--type'], path)
 
-        print(rv['msg'])
-
+    # ... das Anzeigen einem Vorgang
     elif arguments['show'] == True:
         rv = issue_handler.show_issue(arguments['--id'], path)
 
-        print(rv['msg'])
-
+    # ...das bearbeiten von einem Vorgang
     elif arguments['edit'] == True:
         rv = issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path)
 
-        print(rv['msg'])
-
+    # ...das Auflisten der vorhandenen Vorgaenge
     elif arguments['list'] == True:
         rv = issue_handler.list_issue(path)
 
-        print(rv['msg'])
-
+    # ...die Ausfuehrung einer Transition
     elif arguments['state'] == True:
         rv = issue_handler.status_issue(arguments['--id'], arguments['--status'], path)
 
-        print(rv['msg'])
+
+    print(rv['msg'])
 
     return rv['rc']
 
