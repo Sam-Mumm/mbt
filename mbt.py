@@ -2,11 +2,11 @@
 
 Usage:
 mbt.py init [--path=<path>]
-mbt.py new --summary=<summary> [--description=<description>] [--path=<path>]
+mbt.py new --summary=<summary> [--type=<type>] [--description=<description>] [--path=<path>]
 mbt.py show --id=<issue-id> [--path=<path>]
 mbt.py edit --id=<issue-id> --key=<field>  --value=<value> [--path=<path>]
-mbt.py list [--path=<path>]
-mbt.py close --id=<issue-id> --solution=<solution> [--path=<path>]
+mbt.py list [<field_1>:<value> ... <field_n>:<value>] [--path=<path>]
+mbt.py state --id=<issue-id> --status=<status> [--path=<path>]
 mbt.py -h|--help
 mbt.py -v|--version
 
@@ -35,7 +35,7 @@ def main():
         print(rv['msg'])
 
     elif arguments['new'] == True:
-        rv = issue_handler.new_issue(arguments['--summary'], arguments['--description'], path)
+        rv = issue_handler.new_issue(arguments['--summary'], arguments['--description'], arguments['--type'], path)
 
         print(rv['msg'])
 
@@ -45,13 +45,19 @@ def main():
         print(rv['msg'])
 
     elif arguments['edit'] == True:
-        print(issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path))
+        rv = issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path)
+
+        print(rv['msg'])
 
     elif arguments['list'] == True:
-        issue_handler.list_issue(path)
+        rv = issue_handler.list_issue(path)
 
-    elif arguments['status'] == True:
-        issue_handler.close_issue()
+        print(rv['msg'])
+
+    elif arguments['state'] == True:
+        rv = issue_handler.status_issue(arguments['--id'], arguments['--status'], path)
+
+        print(rv['msg'])
 
     return rv['rc']
 
