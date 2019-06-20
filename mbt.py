@@ -32,34 +32,33 @@ def main():
     # Fallunterscheidung fuer...
     # ...die initialiseren vom Bugtracker
     if arguments['init'] == True:
-        rv = issue_handler.initialize_bugtracker(path)
+        return issue_handler.initialize_bugtracker(path)
 
     # ...die Erstellung von einem neuen Vorgang
     elif arguments['new'] == True:
-        rv = issue_handler.new_issue(arguments['--summary'], arguments['--description'], arguments['--type'], path)
+        return issue_handler.new_issue(arguments['--summary'], arguments['--description'], arguments['--type'], path)
 
     # ... das Anzeigen einem Vorgang
     elif arguments['show'] == True:
-        rv = issue_handler.show_issue(arguments['--id'], path)
+        return issue_handler.show_issue(arguments['--id'], path)
 
     # ...das bearbeiten von einem Vorgang
     elif arguments['edit'] == True:
-        rv = issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path)
+        return issue_handler.edit_issue(arguments['--id'], arguments['--key'], arguments['--value'], path)
 
     # ...das Auflisten der vorhandenen Vorgaenge
     elif arguments['list'] == True:
-        rv = issue_handler.list_issue(path)
+        return issue_handler.list_issue(path)
 
     # ...die Ausfuehrung einer Transition
     elif arguments['state'] == True:
-        rv = issue_handler.status_issue(arguments['--id'], arguments['--status'], path)
+        return issue_handler.status_issue(arguments['--id'], arguments['--status'], path)
 
 
-    print(rv['msg'])
 
-    return rv['rc']
 
 if __name__ == '__main__':
-    rc = main()
-
-    exit(rc)
+    if main():
+        exit(0)
+    else
+        exit(1)
