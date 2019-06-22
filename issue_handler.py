@@ -4,44 +4,58 @@ import os
 import random
 import string
 import json
+import configparser
 
-# ------------------------------------ Konfiguration ------------------------------------ #
+# ------------------------------------ Default-Konfiguration ------------------------------------ #
 # Allgemeine Konfigurationseinstellungen
 configuration = {
     "priority": [ "low", "medium", "high" ],
     "type": ["bug", "feature", "improvement"],
+    "submit_state": "open",
     "default_type": "bug",
+    "default_priority": "medium",
     "workflow": {
         "open": ["working", "rejected"],
         "working": ["rejected", "testing", "resolved"],
         "testing": ["working", "resolved"],
+        "resolved": ["reopen", "closed"]
     }
 }
 
 # Grundstruktur von einem Vorgang
 issue_structure = {
     "id": None,
-    "status": "open",
+    "status": None,
     "type": None,
     "summary": None,
     "description": None,
-    "priority": "medium",
+    "priority": None,
     "created_by": None,
-    "created_at": None
+    "created_at": None,
+    "comments": []
 }
 
-# ------------------------------------ Konfiguration ------------------------------------ #
+# ------------------------------------ Default-Konfiguration ------------------------------------ #
 
 # Initialisieren von dem Datenverzeichnis
 # path          Daten-Oberverzeichnis
+# Liefert True zurueck wenn das Datenverzeichnis initialisiert wurde und sonst False
 def initialize_bugtracker(path):
+    full_path=os.path.join(path, ".mbt")
 
     # Existiert in dem angeben Verzeichnis bereits ein .mbt Datenordner?
-    if not os.path.isdir(os.path.join(path, ".mbt")) and not os.path.exists(os.path.join(path, ".mbt")):
+    if not os.path.isdir(full_path) and not os.path.exists(full_path):
         try:
-            os.mkdir(os.path.join(path, ".mbt"))
+            os.mkdir(full_path)
         except OSError as e:
             print(str(e)+"Verzeichnis .mbt konnte nicht erstellt werden")
+            return False
+
+        try:
+            with open(os.path.join(os.path.join(full_path, ".config")), 'w') as fh:
+                json.dump(configuration, fh)
+        except:
+            print("Die Konfigurationsdatei konnte nicht erstellt werden")
             return False
 
         print("MBT wurde erfolgreich initialisiert")
@@ -57,8 +71,12 @@ def initialize_bugtracker(path):
 # description   Beschreibung des Vorgangs
 # type          Vorgangstyp
 # path          Daten-Oberverzeichnis
+# Liefert true zurueck wenn der Vorgang erfolgreich erstellt wurde und sonst False
 def new_issue(summary, description, type, path):
     full_path=os.path.join(path, ".mbt")
+
+    # Einlesen der Konfigurationsdatei (falls vorhanden)
+    configuration=readConfiguration(full_path)
 
     # Existiert das Datenverzeichnis und ist es beschreibbar?
     if os.path.isdir(full_path) and os.access(path, os.W_OK):
@@ -72,8 +90,11 @@ def new_issue(summary, description, type, path):
 
         # Setzen der Felder
         issue_structure['id']=new_id
+        issue_structure['status']=configuration['submit_state']
+        issue_structure['priority']=configuration['default_priority']
         issue_structure['summary']=summary
         issue_structure['description']=description
+        issue_structure['created_by']=readUserFromVCS(path)
         issue_structure['created_at']=datetime.now().strftime('%d-%m-%Y %H:%M')
 
         # Fallunterscheidung fuer den Vorgangstyp es wird der default_type gesetzt falls beim Aufruf kein Typ
@@ -87,6 +108,7 @@ def new_issue(summary, description, type, path):
                 print("Ungüeltiger Vorgangstyp, gueltige Werte sind: " + ', '.join(configuration['type']))
                 return False
 
+        # Schreiben des Vorgangs ins Dateisystem
         try:
             with open(os.path.join(full_path, new_id), 'w') as fh:
                 json.dump(issue_structure, fh)
@@ -105,6 +127,7 @@ def new_issue(summary, description, type, path):
 # Anzeigen von einem vorhandenen Vorgang
 # id            Vorgangs-ID
 # path          Daten-Oberverzeichnis
+# Liefert True zurueck wenn der Vorgang angezeigt werden konnte und sonst False
 def show_issue(id, path):
     # Liste der Titel und Vorgangs-Felder
     fields=[['id', 'ID'],
@@ -139,6 +162,13 @@ def show_issue(id, path):
                         issue_details.extend([[field_name, "---"]])
 
             print(tabulate(issue_details))
+
+            # Anzeigen der Kommentare
+            for c in issue['comments']:
+                print(c['user']+" hat am "+c['date']+" einen Kommentar hinzugefuegt:")
+                print(c['comment'])
+                print("---------------------------")
+
             return True
         else:
             print("Der Vorgang existiert nicht oder ist nicht lesbar")
@@ -154,14 +184,18 @@ def show_issue(id, path):
 # key           Feldname der geaendert werden soll
 # value         neuer Wert fuer das Feld
 # path          Daten-Oberverzeichnis
+# Liefert True zurueck wenn der Vorgang erfolgreich aktualisiert werden konnte und sonst False
 def edit_issue(id, key, value, path):
     # Liste der bearbeitbarer Felder
     modifiable = ['summary', 'description', 'priority' ]
     full_path = os.path.join(path, ".mbt")
 
+    # Einlesen der Konfigurationsdatei (falls vorhanden)
+    configuration=readConfiguration(full_path)
+
     # Falls die Prioritaet geaendert werden soll, liegt der neue Wert im gueltigen Bereich?
     if key == 'priority' and value not in configuration['priority']:
-        print("Fuer priority sind nur die Werte hight, medium, low gueltig")
+        print("Fuer priority sind nur die Werte: "+", ".join(configuration['priority']))
         return False
 
     # Ist das uebergebene Feld bearbeitbar?
@@ -186,7 +220,7 @@ def edit_issue(id, key, value, path):
                     with open(os.path.join(full_path, id), 'w') as fh:
                         json.dump(issue, fh)
                 except OSError as e:
-                    print"Vorgang " + id + " konnte nicht geschrieben werden")
+                    print("Vorgang " + id + " konnte nicht geschrieben werden")
                     return False
 
                 print("Vorgang "+id+" wurde erfolgreich aktualisiert")
@@ -205,6 +239,7 @@ def edit_issue(id, key, value, path):
 
 # Auflisten aller Vorgaenge
 # path          Daten-Oberverzeichnis
+# Liefert True zurueck wenn die Vorgaenge aufgelistet werden konnten und sonst False
 def list_issue(path):
     full_path = os.path.join(path, ".mbt")
     issues_list = []
@@ -238,6 +273,7 @@ def list_issue(path):
 # id            Vorgangs-ID
 # status        Neuer Status des Vorgangs
 # path          Daten-Oberverzeichnis
+# Liefert True zurueck wenn die geforderte Transition erfolgreich durchgefuehrt werden konnte, sonst False
 def status_issue(id, status, path):
     full_path = os.path.join(path, ".mbt")
 
@@ -285,10 +321,96 @@ def status_issue(id, status, path):
         return False
 
 
+# Fuegt einen Kommentar zu einem Vorgang hinzu
+# id            ID des Vorgangs
+# user          Benutzer der den Vorgang kommentiert
+# comment       Text des (neuen) Kommentars
+# path          Daten-Oberverzeichnis
+# Die Methode liefert True,wenn der Kommentar erfolgreich zum Vorgang hinzugefuegt wurde und sonst False
+def addComments(id, user, comment, path):
+    single_comment = { "user": None, "date": None, "comment": None }
+
+    full_path = os.path.join(path, ".mbt")
+
+    # Existiert das Datenverzeichnis und ist es lesbar?
+    if os.path.isdir(full_path) and os.access(path, os.R_OK):
+
+        # Existiert der uebergebene Vorgang (Dateiname == ID) und ist er lesbar?
+        if os.path.isfile(os.path.join(full_path, id)) and os.access(os.path.join(full_path, id), os.R_OK):
+            try:
+                with open(os.path.join(full_path, id)) as fh:
+                    issue = json.load(fh)
+            except OSError as e:
+                print(str(e)+" Vorgang "+id+" konnte nicht gelesen werden")
+                return False
+
+            single_comment['user'] = user
+            single_comment['date'] = datetime.now().strftime('%d-%m-%Y %H:%M')
+            single_comment['comment'] = comment
+
+            issue['comments'].append(single_comment)
+
+            try:
+                with open(os.path.join(full_path, id), 'w') as fh:
+                    json.dump(issue, fh)
+            except:
+                print("Der Kommentar konnte nicht hinzugefuegt werden")
+                return False
+
+        else:
+            print("Der Vorgang konnte nicht gelesen werden")
+            return False
+    else:
+        print("Das Datenverzeichnis konnte nicht gelesen werden")
+        return False
+
+    return True
+
+
 
 # Erzeugen von einem zufaelligen String
 # n             Laenge des Strings der erzeugt werden soll
 def generateID(n):
     return ''.join([random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase ) for i in range(n)])
 
+
+
+# Liest die Konfigurationsdatei aus dem Datenverzeichnis
+# path          absoluter Pfad zum Datenverzeichnis
+# Liefert die Konfiguration (als JSON) aus dem Datenverzeichnis oder die Default-Konfiugration zurück
+def readConfiguration(path):
+    if os.path.isfile(os.path.join(path, ".config")) and os.access(os.path.join(path, ".config"), os.R_OK):
+        try:
+            with open(os.path.join(path, ".config")) as fh:
+                config = json.load(fh)
+        except OSError as e:
+            config=configuration
+    else:
+        config=configuration
+
+    return config
+
+
+
+# Versucht den Benutzer aus der Konfiguration desVersionsmanagementsystems zu lesen
+# path          Ober-Verzeichnis des Datenverzeichnisses
+# Liefert den Benutzername aus der git-Konfiguration oder "anonym" zurueck
+def readUserFromVCS(path):
+    user="anonym"
+
+    # Versucht den Benutzer aus git zu lesen
+    if os.path.isdir(os.path.join(path, ".git")) and os.access(path, os.R_OK):
+        full_path = os.path.join(path, ".git")
+        if os.path.isfile(os.path.join(full_path, "config")) and os.access(os.path.join(full_path, "config"), os.R_OK):
+            try:
+                config = configparser.ConfigParser()
+                config.read(os.path.join(full_path, "config"))
+            except:
+                return user
+
+            if 'user' in config and 'name' in config['user']:
+                return config['user']['name']
+
+
+    return user
 

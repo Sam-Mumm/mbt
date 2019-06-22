@@ -8,6 +8,7 @@ mbt.py show --id=<issue-id> [--path=<path>]
 mbt.py edit --id=<issue-id> --key=<field>  --value=<value> [--path=<path>]
 mbt.py list [<field_1>:<value> ... <field_n>:<value>] [--path=<path>]
 mbt.py state --id=<issue-id> --status=<status> [--path=<path>]
+mbt.py comment --id=<issue-id> --user=<user> --comment=<comment> [--path=<path>]
 mbt.py -h|--help
 mbt.py -v|--version
 
@@ -60,6 +61,10 @@ def main():
     # ...die Ausfuehrung einer Transition
     elif arguments['state'] == True:
         return issue_handler.status_issue(arguments['--id'], arguments['--status'], path)
+
+    # ...das Hinzufuegen von einem Kommentar zu einem Vorgang
+    elif arguments['comment'] == True:
+        return issue_handler.addComments(arguments['--id'], arguments['--user'], arguments['--comment'], path)
 
 
 
