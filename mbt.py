@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """My Little Bugtracker
 
 Usage:
@@ -11,10 +12,16 @@ mbt.py -h|--help
 mbt.py -v|--version
 
 Options:
--h --help  Show this screen.
--v --version  Show version.
---option1  option1
---option2  option2
+-h --help                           Anzeigen der Hilfe
+-v --version                        Anzeige der Version
+--path=<path>                       Pfad zum Daten-Verzeichnis
+--id=<issue-id>                     Vorgangs-ID
+--summary=<summary>                 Titel des Vorgangs
+--type=<type>                       Vorgangstyp (Standardmaessig: Bug)
+--description=<description>         Beschreibung des Vorgangs
+--status=<status>                   Zielstatus des Vorgangs
+--key=<field>                       Feld des Vorgangs
+--value=<value>                     Neuer Wert des Feldes
 """
 
 from docopt import docopt
@@ -60,5 +67,5 @@ def main():
 if __name__ == '__main__':
     if main():
         exit(0)
-    else
+    else:
         exit(1)
