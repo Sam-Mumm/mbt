@@ -26,7 +26,7 @@ Options:
 """
 
 from docopt import docopt
-import issue_handler
+from app import issue_handler
 import os
 
 def main():

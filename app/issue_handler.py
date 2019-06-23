@@ -48,14 +48,14 @@ def initialize_bugtracker(path):
         try:
             os.mkdir(full_path)
         except OSError as e:
-            raise ValueError("Initialisierung fehlgeschlagen: Verzeichnis .mbt konnte nicht erstellt werden")
+            raise PermissionError("Initialisierung fehlgeschlagen: Verzeichnis .mbt konnte nicht erstellt werden")
             return False
 
         try:
             with open(os.path.join(os.path.join(full_path, ".config")), 'w') as fh:
                 json.dump(configuration, fh)
         except:
-            print("Die Konfigurationsdatei konnte nicht erstellt werden")
+            raise PermissionError("Initialisierung fehlgeschlagen: Das Verzeichnis .mbt konnte nicht erstellt werden")
             return False
 
         print("MBT wurde erfolgreich initialisiert")
@@ -104,7 +104,7 @@ def new_issue(summary, description, type, path):
             if type in configuration['type']:
                 issue_structure['type'] = type
             else:
-                print("Ungüeltiger Vorgangstyp, gueltige Werte sind: " + ', '.join(configuration['type']))
+                print("Ungueltiger Vorgangstyp, gueltige Werte sind: " + ', '.join(configuration['type']))
                 return False
 
         # Schreiben des Vorgangs ins Dateisystem
@@ -376,7 +376,7 @@ def generateID(n):
 
 # Liest die Konfigurationsdatei aus dem Datenverzeichnis
 # path          absoluter Pfad zum Datenverzeichnis
-# Liefert die Konfiguration (als JSON) aus dem Datenverzeichnis oder die Default-Konfiugration zurück
+# Liefert die Konfiguration (als JSON) aus dem Datenverzeichnis oder die Default-Konfiugration zurueck
 def readConfiguration(path):
     if os.path.isfile(os.path.join(path, ".config")) and os.access(os.path.join(path, ".config"), os.R_OK):
         try:
