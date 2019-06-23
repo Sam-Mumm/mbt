@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from mbt2 import issue_handler
+from app import issue_handler
 import pytest
 from tempfile import mkdtemp
 
