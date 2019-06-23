@@ -9,3 +9,4 @@ setup(
     description = 'My Bug Tracker',
     packages = find_packages(),
     install_requires = ['tabulate==0.8.3']
+)
