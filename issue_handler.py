@@ -48,7 +48,7 @@ def initialize_bugtracker(path):
         try:
             os.mkdir(full_path)
         except OSError as e:
-            print(str(e)+"Verzeichnis .mbt konnte nicht erstellt werden")
+            raise ValueError("Initialisierung fehlgeschlagen: Verzeichnis .mbt konnte nicht erstellt werden")
             return False
 
         try:
@@ -61,8 +61,7 @@ def initialize_bugtracker(path):
         print("MBT wurde erfolgreich initialisiert")
         return True
     else:
-        print("Initialisierung fehlgeschlagen: Verzeichnis .mbt existiert bereits")
-        return False
+        raise ValueError("Initialisierung fehlgeschlagen: Verzeichnis .mbt existiert bereits")
 
 
 
