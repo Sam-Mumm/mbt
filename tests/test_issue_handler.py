@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from mbt import issue_handler
+from mbt2 import issue_handler
 import pytest
 from tempfile import mkdtemp
 
@@ -17,15 +17,15 @@ def test_initialize_bugtracker(tempdir):
     assert os.path.exists(os.path.join(tempdir, ".mbt"))
 
 
-#def test_initialize_bugtracker_existing(tempdir):
-#    os.mkdir(os.path.join(tempdir, ".mbt"))
-#    with pytest.raises(ValueError, match="existiert bereits"):
-#        issue_handler.initialize_bugtracker(tempdir)
-#    assert os.path.exists(os.path.join(tempdir, ".mbt"))
+def test_initialize_bugtracker_existing(tempdir):
+    os.mkdir(os.path.join(tempdir, ".mbt"))
+    with pytest.raises(ValueError, match="existiert bereits"):
+        issue_handler.initialize_bugtracker(tempdir)
+    assert os.path.exists(os.path.join(tempdir, ".mbt"))
 
 
 def test_initialize_bugtracker_noperms(tempdir):
     os.chmod(tempdir, 0o400)
-    with pytest.raises(OSError, match="Permission denied"):
+    with pytest.raises(PermissionError, match="konnte nicht erstellt werden"):
         issue_handler.initialize_bugtracker(tempdir)
     assert not os.path.exists(os.path.join(tempdir, ".mbt"))
