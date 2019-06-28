@@ -47,16 +47,14 @@ def initialize_bugtracker(path):
     if not os.path.isdir(full_path) and not os.path.exists(full_path):
         try:
             os.mkdir(full_path)
-        except OSError as e:
+        except PermissionError as e:
             raise PermissionError("Initialisierung fehlgeschlagen: Verzeichnis .mbt konnte nicht erstellt werden")
-            return False
 
         try:
             with open(os.path.join(os.path.join(full_path, ".config")), 'w') as fh:
                 json.dump(configuration, fh)
         except:
             raise PermissionError("Initialisierung fehlgeschlagen: Das Verzeichnis .mbt konnte nicht erstellt werden")
-            return False
 
         print("MBT wurde erfolgreich initialisiert")
         return True
@@ -104,22 +102,19 @@ def new_issue(summary, description, type, path):
             if type in configuration['type']:
                 issue_structure['type'] = type
             else:
-                print("Ungueltiger Vorgangstyp, gueltige Werte sind: " + ', '.join(configuration['type']))
-                return False
+                raise ValueError("Ungueltiger Vorgangstyp, gueltige Werte sind: " + ', '.join(configuration['type']))
 
         # Schreiben des Vorgangs ins Dateisystem
         try:
             with open(os.path.join(full_path, new_id), 'w') as fh:
                 json.dump(issue_structure, fh)
         except:
-            print("Der Vorgang konnte nicht erstellt werden")
-            return False
+            raise PermissionError("Der Vorgang konnte nicht erstellt werden")
 
         print("Es wurde ein neues Ticket mit der ID: \""+new_id+"\" erstellt")
         return True
     else:
-        print("Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar")
-        return False
+        raise ValueError("Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar")
 
 
 
@@ -148,9 +143,8 @@ def show_issue(id, path):
             try:
                 with open(os.path.join(full_path, id)) as fh:
                     issue = json.load(fh)
-            except OSError as e:
-                print(str(e)+" Vorgang "+id+" konnte nicht gelesen werden")
-                return False
+            except PermissionError as e:
+                raise PermissionError(str(e)+" Vorgang "+id+" konnte nicht gelesen werden")
 
             for i in fields:
                 if i[0] in issue:
@@ -170,11 +164,9 @@ def show_issue(id, path):
 
             return True
         else:
-            print("Der Vorgang existiert nicht oder ist nicht lesbar")
-            return False
+            raise PermissionError("Der Vorgang existiert nicht oder ist nicht lesbar")
     else:
-        print("Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar")
-        return False
+        raise PermissionError("Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar")
 
 
 
@@ -194,8 +186,7 @@ def edit_issue(id, key, value, path):
 
     # Falls die Prioritaet geaendert werden soll, liegt der neue Wert im gueltigen Bereich?
     if key == 'priority' and value not in configuration['priority']:
-        print("Fuer priority sind nur die Werte: "+", ".join(configuration['priority']))
-        return False
+        raise ValueError("Fuer priority sind nur die Werte: "+", ".join(configuration['priority']))
 
     # Ist das uebergebene Feld bearbeitbar?
     if key in modifiable:
@@ -209,30 +200,25 @@ def edit_issue(id, key, value, path):
                 try:
                     with open(os.path.join(full_path, id)) as fh:
                         issue = json.load(fh)
-                except OSError as e:
-                    print("Vorgang " + id + " konnte nicht gelesen werden")
-                    return False
+                except PermissionError as e:
+                    raise PermissionError("Vorgang " + id + " konnte nicht gelesen werden")
 
                 issue[key]=value
 
                 try:
                     with open(os.path.join(full_path, id), 'w') as fh:
                         json.dump(issue, fh)
-                except OSError as e:
-                    print("Vorgang " + id + " konnte nicht geschrieben werden")
-                    return False
+                except PermissionError as e:
+                    raise PermissionError("Vorgang " + id + " konnte nicht geschrieben werden")
 
                 print("Vorgang "+id+" wurde erfolgreich aktualisiert")
-                return False
+                return True
             else:
-                print("Der Vorgang existiert nicht oder ist nicht lesbar")
-                return False
+                raise PermissionError("Der Vorgang existiert nicht oder ist nicht lesbar")
         else:
-            print("Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar")
-            return False
+            raise PermissionError("Das Verzeichnis "+path+" existiert nicht oder ist nicht schreibbar")
     else:
-        print("Es sind nur folgende Felder bearbeitbar: "+', '.join(modifiable))
-        return False
+        raise ValueError("Es sind nur folgende Felder bearbeitbar: "+', '.join(modifiable))
 
 
 
@@ -260,11 +246,10 @@ def list_issue(path):
             issues_list.extend([[issue['id'], summary, issue['type'], issue['status']]])
 
         print(tabulate(issues_list, headers=['ID', 'Titel', 'Type', 'Status']))
-        return False
+        return True
 
     else:
-        print("Ticket-Verzeichnis ist nicht lesbar")
-        return True
+        raise PermissionError("Ticket-Verzeichnis ist nicht lesbar")
 
 
 
@@ -286,8 +271,7 @@ def status_issue(id, status, path):
                 with open(os.path.join(full_path, id)) as fh:
                     issue = json.load(fh)
             except:
-                print("Der Vorgang konnte nicht gelesen werden")
-                return False
+                raise PermissionError("Der Vorgang konnte nicht gelesen werden")
 
             # hat der Vorgang einen gueltigen Status
             if issue['status'] in configuration['workflow']:
@@ -300,24 +284,19 @@ def status_issue(id, status, path):
                         with open(os.path.join(full_path, id), 'w') as fh:
                             json.dump(issue, fh)
                     except:
-                        print("Der Vorgang konnte nicht aktualisiert werden")
-                        return False
+                        raise PermissionError("Der Vorgang konnte nicht aktualisiert werden")
 
                     print("Vorgang wurde erfolgreich aktualisiert")
                     return True
                 else:
-                    print("Ungueltiger Zielzustand, erlaubt sind nur: "+', '.join(configuration['workflow'][issue['status']]))
-                    return False
+                    raise ValueError("Ungueltiger Zielzustand, erlaubt sind nur: "+', '.join(configuration['workflow'][issue['status']]))
             else:
-                print("Der Vorgang hat einen ungueltigen Zustand")
-                return False
+                raise ValueError("Der Vorgang hat einen ungueltigen Zustand")
 
         else:
-            print("Der Vorgang existiert nicht oder ist nicht lesbar")
-            return False
+            raise PermissionError("Der Vorgang existiert nicht oder ist nicht lesbar")
     else:
-        print("Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar")
-        return False
+        raise PermissionError("Das Verzeichnis " + path + " existiert nicht oder ist nicht schreibbar")
 
 
 # Fuegt einen Kommentar zu einem Vorgang hinzu
@@ -339,9 +318,8 @@ def addComments(id, user, comment, path):
             try:
                 with open(os.path.join(full_path, id)) as fh:
                     issue = json.load(fh)
-            except OSError as e:
-                print(str(e)+" Vorgang "+id+" konnte nicht gelesen werden")
-                return False
+            except:
+                raise PermissionError(str(e)+" Vorgang "+id+" konnte nicht gelesen werden")
 
             single_comment['user'] = user
             single_comment['date'] = datetime.now().strftime('%d-%m-%Y %H:%M')
@@ -353,15 +331,12 @@ def addComments(id, user, comment, path):
                 with open(os.path.join(full_path, id), 'w') as fh:
                     json.dump(issue, fh)
             except:
-                print("Der Kommentar konnte nicht hinzugefuegt werden")
-                return False
+                raise PermissionError("Der Kommentar konnte nicht hinzugefuegt werden")
 
         else:
-            print("Der Vorgang konnte nicht gelesen werden")
-            return False
+            raise PermissionError("Der Vorgang konnte nicht gelesen werden")
     else:
-        print("Das Datenverzeichnis konnte nicht gelesen werden")
-        return False
+        raise PermissionError("Das Datenverzeichnis konnte nicht gelesen werden")
 
     return True
 
